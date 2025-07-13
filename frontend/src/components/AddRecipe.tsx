@@ -6,7 +6,7 @@ interface AddRecipeProps {
   onClose: () => void;
 }
 
-const AddRecipe: React.FC<AddRecipeProps> = ({ isLoggedIn, onClose }) => {
+const AddRecipe: React.FC<AddRecipeProps> = ({ isLoggedIn, onClose }: AddRecipeProps) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -24,21 +24,21 @@ const AddRecipe: React.FC<AddRecipeProps> = ({ isLoggedIn, onClose }) => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
       [name]: name === 'servings' ? parseInt(value) || 1 : value
     }));
   };
 
   const handleArrayChange = (index: number, value: string, field: 'ingredients' | 'instructions' | 'tags') => {
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
-      [field]: prev[field].map((item, i) => i === index ? value : item)
+      [field]: prev[field].map((item: string, i: number) => i === index ? value : item)
     }));
   };
 
   const addArrayItem = (field: 'ingredients' | 'instructions' | 'tags') => {
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
       [field]: [...prev[field], '']
     }));
@@ -46,20 +46,19 @@ const AddRecipe: React.FC<AddRecipeProps> = ({ isLoggedIn, onClose }) => {
 
   const removeArrayItem = (index: number, field: 'ingredients' | 'instructions' | 'tags') => {
     if (formData[field].length > 1) {
-      setFormData(prev => ({
+      setFormData((prev: typeof formData) => ({
         ...prev,
-        [field]: prev[field].filter((_, i) => i !== index)
+        [field]: prev[field].filter((_: string, i: number) => i !== index)
       }));
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoggedIn) {
       alert('Please log in to submit a recipe');
       return;
     }
-    
     // Filter out empty items
     const cleanedData = {
       ...formData,
@@ -67,10 +66,32 @@ const AddRecipe: React.FC<AddRecipeProps> = ({ isLoggedIn, onClose }) => {
       instructions: formData.instructions.filter(item => item.trim()),
       tags: formData.tags.filter(item => item.trim())
     };
-    
-    console.log('Recipe submitted:', cleanedData);
-    alert('Recipe submitted successfully! It will be reviewed before being published.');
-    onClose();
+
+    // Prepare payload for backend (only required fields)
+    const payload = {
+      name: cleanedData.name,
+      ingredients: JSON.stringify(cleanedData.ingredients),
+      instructions: JSON.stringify(cleanedData.instructions)
+    };
+
+    try {
+      const response = await fetch('/recipes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (response.ok) {
+        alert('Recipe submitted successfully! It will be reviewed before being published.');
+        onClose();
+      } else {
+        const errorData = await response.json();
+        alert('Failed to submit recipe: ' + (errorData.error || 'Unknown error'));
+      }
+    } catch (error) {
+      alert('Failed to submit recipe: ' + error);
+    }
   };
 
   if (!isLoggedIn) {

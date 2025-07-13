@@ -1,11 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Plus, X, ChefHat } from 'lucide-react';
-import { recipes, Recipe } from './RecipeData';
+import { recipes as staticRecipes, Recipe } from './RecipeData';
 
 const IngredientSearch = () => {
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [ingredientInput, setIngredientInput] = useState('');
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>(staticRecipes);
   const [matchingRecipes, setMatchingRecipes] = useState<Recipe[]>([]);
+
+  useEffect(() => {
+    fetch('/recipes')
+      .then(res => res.json())
+      .then(data => {
+        const mapped = data.map((r: any, idx: number) => ({
+          id: r.id || idx + 10000,
+          name: r.name,
+          description: r.description || '',
+          difficulty: r.difficulty || 'Easy',
+          rating: r.rating || 5,
+          prepTime: r.prepTime || '',
+          servings: r.servings || 1,
+          image: r.image || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=600&h=400',
+          category: r.category || 'Other',
+          tags: r.tags || [],
+          ingredients: r.ingredients || [],
+          instructions: r.instructions || [],
+        }));
+        setAllRecipes([...staticRecipes, ...mapped]);
+      })
+      .catch(() => setAllRecipes(staticRecipes));
+  }, []);
 
   // Common ingredients for suggestions
   const commonIngredients = [
@@ -35,7 +59,7 @@ const IngredientSearch = () => {
       return;
     }
 
-    const matches = recipes.filter(recipe => {
+    const matches = allRecipes.filter(recipe => {
       const recipeIngredients = recipe.ingredients.map(ing => ing.toLowerCase());
       const matchCount = ingredients.filter(ingredient => 
         recipeIngredients.some(recipeIng => recipeIng.includes(ingredient))

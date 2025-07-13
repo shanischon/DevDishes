@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Star, Clock, Users, BookOpen, Search } from 'lucide-react';
-import { recipes, Recipe } from './RecipeData';
+import { recipes as staticRecipes, Recipe } from './RecipeData';
 
 
 const getDifficultyColor = (difficulty: string) => {
@@ -13,15 +13,40 @@ const getDifficultyColor = (difficulty: string) => {
 };
 
 const FeaturedRecipes = () => {
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [selectedCategory, setSelectedCategory] = React.useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [recipes, setRecipes] = useState<Recipe[]>(staticRecipes);
+
+  useEffect(() => {
+    fetch('/recipes')
+      .then(res => res.json())
+      .then(data => {
+        // If backend returns only name, ingredients, instructions, fill in defaults for other fields
+        const mapped = data.map((r: any, idx: number) => ({
+          id: r.id || idx + 10000, // fallback id
+          name: r.name,
+          description: r.description || '',
+          difficulty: r.difficulty || 'Easy',
+          rating: r.rating || 5,
+          prepTime: r.prepTime || '',
+          servings: r.servings || 1,
+          image: r.image || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=600&h=400',
+          category: r.category || 'Other',
+          tags: r.tags || [],
+          ingredients: r.ingredients || [],
+          instructions: r.instructions || [],
+        }));
+        setRecipes([...staticRecipes, ...mapped]);
+      })
+      .catch(() => setRecipes(staticRecipes));
+  }, []);
 
   const categories = ['All', ...Array.from(new Set(recipes.map(recipe => recipe.category)))];
 
   const filteredRecipes = recipes.filter(recipe => {
     const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         recipe.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                         recipe.description.toLowerCase().includes(searchQuery.toLowerCase());
+                         (recipe.tags && recipe.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))) ||
+                         (recipe.description && recipe.description.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCategory = selectedCategory === 'All' || recipe.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });

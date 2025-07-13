@@ -1,0 +1,3 @@
+# Remove the current deployment.yaml content and replace it with a comment indicating the deployments have been split.
+# The actual deployments will be in backend-deployment.yaml, frontend-deployment.yaml, and db-deployment.yaml.
+# This file is intentionally left blank. See backend-deployment.yaml, frontend-deployment.yaml, and db-deployment.yaml for deployments.

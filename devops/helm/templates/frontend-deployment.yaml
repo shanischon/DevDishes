@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devdishes-frontend
+  labels:
+    app: devdishes-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: devdishes-frontend
+  template:
+    metadata:
+      labels:
+        app: devdishes-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          ports:
+            - containerPort: 80 
