@@ -27,14 +27,14 @@ jobs:
         id: backend_version
         run: |
           if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^backend/'; then
-            version=$(cat backend/version.txt)
+            version=$(cat backend/version.vars | grep tag | awk '{print $2}')
             version=$((version+1))
-            echo $version > backend/version.txt
+            echo $version > backend/.next_version
             echo "BACKEND_CHANGED=true" >> $GITHUB_ENV
             echo "BACKEND_VERSION=$version" >> $GITHUB_ENV
           else
             echo "BACKEND_CHANGED=false" >> $GITHUB_ENV
-            echo "BACKEND_VERSION=$(cat backend/version.txt)" >> $GITHUB_ENV
+            echo "BACKEND_VERSION=$(cat backend/version.vars | grep tag | awk '{print $2}')" >> $GITHUB_ENV
           fi
 
       # Detect changes and bump version for frontend
@@ -42,14 +42,14 @@ jobs:
         id: frontend_version
         run: |
           if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^frontend/'; then
-            version=$(cat frontend/version.txt)
+            version=$(cat frontend/version.vars | grep tag | awk '{print $2}')
             version=$((version+1))
-            echo $version > frontend/version.txt
+            echo $version > frontend/.next_version
             echo "FRONTEND_CHANGED=true" >> $GITHUB_ENV
             echo "FRONTEND_VERSION=$version" >> $GITHUB_ENV
           else
             echo "FRONTEND_CHANGED=false" >> $GITHUB_ENV
-            echo "FRONTEND_VERSION=$(cat frontend/version.txt)" >> $GITHUB_ENV
+            echo "FRONTEND_VERSION=$(cat frontend/version.vars | grep tag | awk '{print $2}')" >> $GITHUB_ENV
           fi
 
       # Detect changes and bump version for db
@@ -57,14 +57,14 @@ jobs:
         id: db_version
         run: |
           if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^devops/db/'; then
-            version=$(cat devops/db/version.txt)
+            version=$(cat devops/db/version.vars | grep tag | awk '{print $2}')
             version=$((version+1))
-            echo $version > devops/db/version.txt
+            echo $version > devops/db/.next_version
             echo "DB_CHANGED=true" >> $GITHUB_ENV
             echo "DB_VERSION=$version" >> $GITHUB_ENV
           else
             echo "DB_CHANGED=false" >> $GITHUB_ENV
-            echo "DB_VERSION=$(cat devops/db/version.txt)" >> $GITHUB_ENV
+            echo "DB_VERSION=$(cat devops/db/version.vars | grep tag | awk '{print $2}')" >> $GITHUB_ENV
           fi
 
       # Run backend unit tests if changed
@@ -100,6 +100,11 @@ jobs:
           file: ./devops/backend/backend.Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/devdishes-backend:${{ env.BACKEND_VERSION }}
+      - name: Update backend version.vars
+        if: env.BACKEND_CHANGED == 'true'
+        run: |
+          echo "image: ${{ secrets.DOCKERHUB_USERNAME }}/devdishes-backend" > backend/version.vars
+          echo "tag: ${{ env.BACKEND_VERSION }}" >> backend/version.vars
 
       # Build and push frontend image if changed
       - name: Build and push frontend image
@@ -110,6 +115,11 @@ jobs:
           file: ./devops/frontend/frontend.Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/devdishes-frontend:${{ env.FRONTEND_VERSION }}
+      - name: Update frontend version.vars
+        if: env.FRONTEND_CHANGED == 'true'
+        run: |
+          echo "image: ${{ secrets.DOCKERHUB_USERNAME }}/devdishes-frontend" > frontend/version.vars
+          echo "tag: ${{ env.FRONTEND_VERSION }}" >> frontend/version.vars
 
       # Build and push db image if changed
       - name: Build and push db image
@@ -120,27 +130,18 @@ jobs:
           file: ./devops/db/db.Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/devdishes-db:${{ env.DB_VERSION }}
-
-      - name: Set up Kubeconfig
+      - name: Update db version.vars
+        if: env.DB_CHANGED == 'true'
         run: |
-          mkdir -p $HOME/.kube
-          echo "$KUBECONFIG_DATA" | base64 -d > $HOME/.kube/config
-        env:
-          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+          echo "image: ${{ secrets.DOCKERHUB_USERNAME }}/devdishes-db" > devops/db/version.vars
+          echo "tag: ${{ env.DB_VERSION }}" >> devops/db/version.vars
 
-      - name: Set up Helm
-        uses: azure/setup-helm@v3
-        with:
-          version: v3.13.3
-
-      - name: Deploy with Helm
+      # Commit and push version.vars changes if any
+      - name: Commit and push version.vars
+        if: env.BACKEND_CHANGED == 'true' || env.FRONTEND_CHANGED == 'true' || env.DB_CHANGED == 'true'
         run: |
-          helm upgrade --install devdishes devops/helm \
-            --set backend.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/devdishes-backend \
-            --set backend.image.tag=${{ env.BACKEND_VERSION }} \
-            --set frontend.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/devdishes-frontend \
-            --set frontend.image.tag=${{ env.FRONTEND_VERSION }} \
-            --set db.image.repository=${{ secrets.DOCKERHUB_USERNAME }}/devdishes-db \
-            --set db.image.tag=${{ env.DB_VERSION }}
-        env:
-          KUBECONFIG: $HOME/.kube/config 
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add backend/version.vars frontend/version.vars devops/db/version.vars
+          git commit -m "ci: update version.vars for new image tags [skip ci]" || echo "No changes to commit"
+          git push 
