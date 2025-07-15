@@ -8,10 +8,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - your-domain.com # Replace with your chosen domain
+        - devdishes.com
       secretName: devdishes-tls
   rules:
-    - host: your-domain.com # Replace with your chosen domain
+    - host: devdishes.com
       http:
         paths:
           - path: /
