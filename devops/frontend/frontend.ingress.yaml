@@ -6,8 +6,12 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
+  tls:
+    - hosts:
+        - your-domain.com # Replace with your chosen domain
+      secretName: devdishes-tls
   rules:
-    - host: devdishes
+    - host: your-domain.com # Replace with your chosen domain
       http:
         paths:
           - path: /
