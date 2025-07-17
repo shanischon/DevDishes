@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend-deployment
+  namespace: devdishes
 spec:
   replicas: 1
   selector:
@@ -14,6 +15,6 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: shanischon/frontend:latest
+        image: shanischon/devdishes-frontend:1
         ports:
         - containerPort: 80 
