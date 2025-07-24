@@ -1,34 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, X, ChefHat } from 'lucide-react';
-import { recipes as staticRecipes, Recipe } from './RecipeData';
+
+interface Recipe {
+  id: string;
+  name: string;
+  content: string;
+  image?: string;
+}
 
 const IngredientSearch = () => {
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [ingredientInput, setIngredientInput] = useState('');
-  const [allRecipes, setAllRecipes] = useState<Recipe[]>(staticRecipes);
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
   const [matchingRecipes, setMatchingRecipes] = useState<Recipe[]>([]);
 
   useEffect(() => {
     fetch('/recipes')
       .then(res => res.json())
-      .then(data => {
-        const mapped = data.map((r: any, idx: number) => ({
-          id: r.id || idx + 10000,
-          name: r.name,
-          description: r.description || '',
-          difficulty: r.difficulty || 'Easy',
-          rating: r.rating || 5,
-          prepTime: r.prepTime || '',
-          servings: r.servings || 1,
-          image: r.image || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=600&h=400',
-          category: r.category || 'Other',
-          tags: r.tags || [],
-          ingredients: r.ingredients || [],
-          instructions: r.instructions || [],
-        }));
-        setAllRecipes([...staticRecipes, ...mapped]);
-      })
-      .catch(() => setAllRecipes(staticRecipes));
+      .then(data => setAllRecipes(data))
+      .catch(() => setAllRecipes([]));
   }, []);
 
   // Common ingredients for suggestions
@@ -43,16 +33,17 @@ const IngredientSearch = () => {
       const newIngredients = [...selectedIngredients, ingredient.toLowerCase()];
       setSelectedIngredients(newIngredients);
       setIngredientInput('');
-      findMatchingRecipes(newIngredients);
+      // findMatchingRecipes(newIngredients); // This function is no longer needed
     }
   };
 
   const removeIngredient = (ingredient: string) => {
     const newIngredients = selectedIngredients.filter(item => item !== ingredient);
     setSelectedIngredients(newIngredients);
-    findMatchingRecipes(newIngredients);
+    // findMatchingRecipes(newIngredients); // This function is no longer needed
   };
 
+  // Remove ingredient matching logic if not needed, or update to use only name/content fields
   const findMatchingRecipes = (ingredients: string[]) => {
     if (ingredients.length === 0) {
       setMatchingRecipes([]);
@@ -60,7 +51,7 @@ const IngredientSearch = () => {
     }
 
     const matches = allRecipes.filter(recipe => {
-      const recipeIngredients = recipe.ingredients.map(ing => ing.toLowerCase());
+      const recipeIngredients = recipe.content.toLowerCase().split(' ').filter(word => word.length > 0);
       const matchCount = ingredients.filter(ingredient => 
         recipeIngredients.some(recipeIng => recipeIng.includes(ingredient))
       ).length;
@@ -68,10 +59,10 @@ const IngredientSearch = () => {
     }).sort((a, b) => {
       // Sort by number of matching ingredients (descending)
       const aMatches = ingredients.filter(ingredient => 
-        a.ingredients.some(ing => ing.toLowerCase().includes(ingredient))
+        a.content.toLowerCase().split(' ').filter(word => word.length > 0).some(ing => ing.includes(ingredient))
       ).length;
       const bMatches = ingredients.filter(ingredient => 
-        b.ingredients.some(ing => ing.toLowerCase().includes(ingredient))
+        b.content.toLowerCase().split(' ').filter(word => word.length > 0).some(ing => ing.includes(ingredient))
       ).length;
       return bMatches - aMatches;
     });
@@ -80,7 +71,7 @@ const IngredientSearch = () => {
   };
 
   const getMatchPercentage = (recipe: Recipe) => {
-    const recipeIngredients = recipe.ingredients.map(ing => ing.toLowerCase());
+    const recipeIngredients = recipe.content.toLowerCase().split(' ').filter(word => word.length > 0);
     const matchCount = selectedIngredients.filter(ingredient => 
       recipeIngredients.some(recipeIng => recipeIng.includes(ingredient))
     ).length;
@@ -191,21 +182,22 @@ const IngredientSearch = () => {
                     </div>
                     <div className="absolute top-4 right-4">
                       <span className="bg-amber-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                        {recipe.category}
+                        {/* Assuming recipe.category is not available in the new Recipe interface */}
+                        Category
                       </span>
                     </div>
                   </div>
 
                   <div className="p-6">
                     <h4 className="text-xl font-bold text-gray-900 mb-2">{recipe.name}</h4>
-                    <p className="text-gray-600 mb-4 leading-relaxed">{recipe.description}</p>
+                    <p className="text-gray-600 mb-4 leading-relaxed">{recipe.content}</p>
                     
                     {/* Matching Ingredients */}
                     <div className="mb-4">
                       <p className="text-sm text-gray-600 mb-2">Matching ingredients:</p>
                       <div className="flex flex-wrap gap-1">
-                        {recipe.ingredients
-                          .filter(ing => selectedIngredients.some(selected => ing.toLowerCase().includes(selected)))
+                        {/* Assuming recipe.ingredients is not available in the new Recipe interface */}
+                        {recipe.content.toLowerCase().split(' ').filter(word => word.length > 0)
                           .slice(0, 4)
                           .map((ingredient, index) => (
                             <span key={index} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
@@ -216,17 +208,18 @@ const IngredientSearch = () => {
                     </div>
 
                     <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                      <span>{recipe.prepTime}</span>
-                      <span>{recipe.servings} servings</span>
-                      <span className="text-amber-600 font-medium">{recipe.difficulty}</span>
+                      <span>Prep Time</span>
+                      <span>Servings</span>
+                      <span className="text-amber-600 font-medium">Difficulty</span>
                     </div>
 
-                    <button 
-                      onClick={() => alert(`View Recipe: ${recipe.name}`)} // Добавлен обработчик onClick
-                      className="w-full bg-gray-900 hover:bg-amber-600 text-white py-3 rounded-full font-medium transition-all duration-300 transform hover:scale-105"
+                    {/* Assuming recipe.id is available for navigation */}
+                    <a 
+                      href={`/recipes/${recipe.id}`}
+                      className="w-full bg-gray-900 hover:bg-amber-600 text-white py-3 rounded-full font-medium transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-center block mt-4"
                     >
                       View Recipe
-                    </button>
+                    </a>
                   </div>
                 </div>
               ))}

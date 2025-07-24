@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: devdishes-tls
-  namespace: devdishes
-type: kubernetes.io/tls
-data:
-  tls.crt: <paste-your-base64-cert-here>
-  tls.key: <paste-your-base64-key-here>

@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 import os
 import psycopg2
-import json
 
 app = Flask(__name__)
 DB_HOST = os.environ.get('DB_HOST', 'localhost')
@@ -25,8 +24,8 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS recipes (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
-        ingredients TEXT NOT NULL,
-        instructions TEXT NOT NULL
+        content TEXT NOT NULL,
+        image TEXT
     )''')
     conn.commit()
     c.close()
@@ -36,44 +35,55 @@ def init_db():
 def add_recipe():
     data = request.get_json()
     name = data.get('name')
-    ingredients = data.get('ingredients')
-    instructions = data.get('instructions')
-    if not all([name, ingredients, instructions]):
+    content = data.get('content')
+    image = data.get('image')
+    if not all([name, content]):
         return jsonify({'error': 'Missing fields'}), 400
     conn = get_db_connection()
     c = conn.cursor()
-    c.execute('INSERT INTO recipes (name, ingredients, instructions) VALUES (%s, %s, %s)',
-              (name, ingredients, instructions))
+    c.execute('INSERT INTO recipes (name, content, image) VALUES (%s, %s, %s) RETURNING id',
+              (name, content, image))
+    recipe_id = c.fetchone()[0]
     conn.commit()
     c.close()
     conn.close()
-    return jsonify({'message': 'Recipe added successfully'}), 201
+    return jsonify({'message': 'Recipe added successfully', 'id': recipe_id}), 201
 
 @app.route('/recipes', methods=['GET'])
 def get_recipes():
     conn = get_db_connection()
     c = conn.cursor()
-    c.execute('SELECT id, name, ingredients, instructions FROM recipes')
+    c.execute('SELECT id, name, content, image FROM recipes')
     rows = c.fetchall()
     c.close()
     conn.close()
     recipes = []
     for row in rows:
-        try:
-            ingredients = json.loads(row[2])
-        except Exception:
-            ingredients = row[2]
-        try:
-            instructions = json.loads(row[3])
-        except Exception:
-            instructions = row[3]
         recipes.append({
             'id': row[0],
             'name': row[1],
-            'ingredients': ingredients,
-            'instructions': instructions
+            'content': row[2],
+            'image': row[3]
         })
     return jsonify(recipes)
+
+@app.route('/recipes/<int:recipe_id>', methods=['GET'])
+def get_recipe(recipe_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('SELECT id, name, content, image FROM recipes WHERE id = %s', (recipe_id,))
+    row = c.fetchone()
+    c.close()
+    conn.close()
+    if not row:
+        return jsonify({'error': 'Recipe not found'}), 404
+    recipe = {
+        'id': row[0],
+        'name': row[1],
+        'content': row[2],
+        'image': row[3]
+    }
+    return jsonify(recipe)
 
 if __name__ == '__main__':
     init_db()

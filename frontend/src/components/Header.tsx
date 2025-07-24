@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import { Menu, X, ChefHat, Search, Plus } from 'lucide-react';
-import Login from './Login';
 import AddRecipe from './AddRecipe';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isAddRecipeOpen, setIsAddRecipeOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // This would come from your auth system
 
   return (
     <>
@@ -34,7 +31,7 @@ const Header = () => {
               </a>
             </nav>
 
-            {/* Search and Login */}
+            {/* Search and Add Recipe */}
             <div className="hidden md:flex items-center space-x-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -46,24 +43,12 @@ const Header = () => {
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent w-64"
                 />
               </div>
-              {isLoggedIn && (
-                <button
-                  onClick={() => setIsAddRecipeOpen(true)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full font-medium transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Add Recipe</span>
-                </button>
-              )}
               <button
-               onClick={() => setIsLoginOpen(true)}
-                className={`px-3 py-1.5 rounded-full font-medium transition-all duration-300 transform hover:scale-105 ${
-                  isLoggedIn 
-                    ? 'bg-gray-600 hover:bg-gray-700 text-white' 
-                    : 'bg-amber-600 hover:bg-amber-700 text-white'
-                }`}
+                onClick={() => setIsAddRecipeOpen(true)}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full font-medium transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
               >
-                {isLoggedIn ? 'Profile' : 'Sign In'}
+                <Plus className="h-4 w-4" />
+                <span>Add Recipe</span>
               </button>
             </div>
 
@@ -101,24 +86,12 @@ const Header = () => {
                 <a href="#ingredient-search" className="text-gray-700 hover:text-amber-600 transition-colors font-medium">
                   Find by Ingredients
                 </a>
-                {isLoggedIn && (
-                  <button
-                    onClick={() => setIsAddRecipeOpen(true)}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full font-medium transition-all duration-300 transform hover:scale-105 w-fit flex items-center space-x-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Add Recipe</span>
-                  </button>
-                )}
                 <button
-                 onClick={() => setIsLoginOpen(true)}
-                className={`px-3 py-1.5 rounded-full font-medium transition-all duration-300 transform hover:scale-105 ${
-                  isLoggedIn 
-                    ? 'bg-gray-600 hover:bg-gray-700 text-white' 
-                    : 'bg-amber-600 hover:bg-amber-700 text-white'
-                }`}
-              >
-                {isLoggedIn ? 'Profile' : 'Sign In'}
+                  onClick={() => setIsAddRecipeOpen(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full font-medium transition-all duration-300 transform hover:scale-105 w-fit flex items-center space-x-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Recipe</span>
                 </button>
               </nav>
             </div>
@@ -126,18 +99,10 @@ const Header = () => {
         </div>
       </header>
 
-      {/* Login Modal */}
-      {isLoginOpen && (
-        <Login 
-          onClose={() => setIsLoginOpen(false)} 
-          onLogin={() => setIsLoggedIn(true)}
-        />
-      )}
-      
       {/* Add Recipe Modal */}
       {isAddRecipeOpen && (
         <AddRecipe 
-          isLoggedIn={isLoggedIn}
+          isLoggedIn={true}
           onClose={() => setIsAddRecipeOpen(false)} 
         />
       )}

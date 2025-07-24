@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: shanischon/devdishes-backend:1
+        image: shanischon/devdishes-backend:3
         ports:
         - containerPort: 5000
         env:
