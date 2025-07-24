@@ -143,10 +143,12 @@ frontend:
     tag: ""
     pullPolicy: IfNotPresent
   service:
-    type: LoadBalancer
+    type: ClusterIP
     port: 80
   env:
-    # ... existing env ...
+    # Example environment variables for frontend
+    API_URL: "http://localhost:5000" # Update as needed
+    NODE_ENV: "production"
 db:
   image:
     repository: ""
@@ -156,5 +158,11 @@ db:
     type: ClusterIP
     port: 5432
   env:
-    # ... existing env ...
+    POSTGRES_DB: "devdishes"
+    POSTGRES_USER: "devuser"
+    POSTGRES_PASSWORD_SECRET_NAME: "postgres-secret"
+    POSTGRES_PASSWORD_SECRET_KEY: "POSTGRES_PASSWORD"
   persistentVolumeClaim: "postgres-pvc"
+  pvc:
+    accessMode: "ReadWriteOnce"
+    size: "1Gi"

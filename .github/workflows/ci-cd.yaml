@@ -9,6 +9,13 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-22.04
+
+      # Detect changes and bump version for backend
+      - name: Detect backend changes and bump version
+        id: backend_version
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^backend/'; then
+            version=$(cat backend/version.vars | grep tag | aw
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -20,14 +27,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # Detect changes and bump version for backend
-      - name: Detect backend changes and bump version
-        id: backend_version
-        run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^backend/'; then
-            version=$(cat backend/version.vars | grep tag | awk '{print $2}')
+          password: ${{ secrets.DOCKERHUB_TOKEN }}k '{print $2}')
             version=$((version+1))
             echo $version > backend/.next_version
             echo "BACKEND_CHANGED=true" >> $GITHUB_ENV
@@ -145,3 +145,27 @@ jobs:
           git add backend/version.vars frontend/version.vars devops/db/version.vars
           git commit -m "ci: update version.vars for new image tags [skip ci]" || echo "No changes to commit"
           git push 
+  publish-helm-chart:
+    needs: build-and-deploy
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.13.3
+
+      - name: Package Helm chart
+        run: |
+          helm package devops/helm --destination chart-out
+          helm repo index chart-out --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+
+      - name: Publish Helm chart to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./chart-out
+          publish_branch: gh-pages 
