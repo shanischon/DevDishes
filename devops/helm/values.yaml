@@ -127,13 +127,34 @@ backend:
     repository: ""
     tag: ""
     pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 5000
+  env:
+    DB_HOST: "postgres-service"
+    DB_PORT: "5432"
+    DB_NAME: "devdishes"
+    DB_USER: "devuser"
+    DB_PASSWORD_SECRET_NAME: "postgres-secret"
+    DB_PASSWORD_SECRET_KEY: "POSTGRES_PASSWORD"
 frontend:
   image:
     repository: ""
     tag: ""
     pullPolicy: IfNotPresent
+  service:
+    type: LoadBalancer
+    port: 80
+  env:
+    # ... existing env ...
 db:
   image:
     repository: ""
     tag: ""
     pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 5432
+  env:
+    # ... existing env ...
+  persistentVolumeClaim: "postgres-pvc"

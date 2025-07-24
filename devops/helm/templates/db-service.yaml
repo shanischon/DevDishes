@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "devdishes.fullname" . }}-db
+  labels:
+    {{- include "devdishes.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.db.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.db.service.port | default 5432 }}
+      targetPort: 5432
+      protocol: TCP
+      name: db
+  selector:
+    app: devdishes-db 

@@ -1,0 +1,2 @@
+devops/db/postgres.secret.yaml
+devops/frontend/frontend-tls.secret.yaml 
