@@ -124,8 +124,8 @@ affinity: {}
 
 backend:
   image:
-    repository: ""
-    tag: ""
+    repository: "shanischon/devdishes-backend"
+    tag: "latest"
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
@@ -139,8 +139,8 @@ backend:
     DB_PASSWORD_SECRET_KEY: "POSTGRES_PASSWORD"
 frontend:
   image:
-    repository: ""
-    tag: ""
+    repository: "shanischon/devdishes-frontend"
+    tag: "latest"
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
@@ -151,8 +151,8 @@ frontend:
     NODE_ENV: "production"
 db:
   image:
-    repository: ""
-    tag: ""
+    repository: "postgres"
+    tag: "14-alpine"
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
